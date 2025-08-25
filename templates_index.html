@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anwer Bot - مراقب التليجرام المتقدم</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            direction: rtl;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin: 20px;
+            padding: 30px;
+        }
+
+        .status-card {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .connected {
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .monitoring {
+            background: linear-gradient(45deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: bold;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #56ab2f 0%, #a8edea 100%);
+            border: none;
+            border-radius: 10px;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff416c 0%, #ff4b2b 100%);
+            border: none;
+            border-radius: 10px;
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            border-radius: 10px;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .alert-item {
+            background: linear-gradient(45deg, #ffeaa7 0%, #fab1a0 100%);
+            color: #333;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-left: 5px solid #e17055;
+        }
+
+        .header-title {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .status-connected {
+            background-color: #28a745;
+            box-shadow: 0 0 10px #28a745;
+        }
+
+        .status-disconnected {
+            background-color: #dc3545;
+            box-shadow: 0 0 10px #dc3545;
+        }
+
+        .keyword-tag {
+            background: linear-gradient(45deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+            padding: 5px 10px;
+            border-radius: 20px;
+            margin: 2px;
+            display: inline-block;
+            font-size: 0.9rem;
+        }
+
+        .counter-badge {
+            background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 100%);
+            color: #333;
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <h1 class="header-title">
+                <i class="fas fa-robot"></i>
+                Anwer Bot - مراقب التليجرام المتقدم
+            </h1>
+
+            <!-- حالة النظام -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="status-card {% if settings.is_logged %}connected{% else %}disconnected{% endif %}">
+                        <h5><i class="fas fa-wifi"></i> حالة الاتصال</h5>
+                        <p class="mb-0">
+                            <span class="status-indicator {% if settings.is_logged %}status-connected{% else %}status-disconnected{% endif %}"></span>
+                            {% if settings.is_logged %}متصل{% else %}غير متصل{% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="status-card {% if settings.monitoring_enabled %}monitoring{% endif %}">
+                        <h5><i class="fas fa-eye"></i> حالة المراقبة</h5>
+                        <p class="mb-0">
+                            <span class="status-indicator {% if settings.monitoring_enabled %}status-connected{% else %}status-disconnected{% endif %}"></span>
+                            {% if settings.monitoring_enabled %}يعمل{% else %}متوقف{% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="status-card">
+                        <h5><i class="fas fa-bell"></i> إجمالي التنبيهات</h5>
+                        <p class="mb-0">
+                            <span class="counter-badge">{{ total_alerts }}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- تسجيل الدخول -->
+            <div class="row mb-4" id="loginSection" {% if settings.is_logged %}style="display: none;"{% endif %}>
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="loginForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">رقم الهاتف</label>
+                                            <input type="text" class="form-control" name="phone" value="{{ settings.phone }}" placeholder="+967xxxxxxxxx" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label class="form-label">API ID</label>
+                                            <input type="number" class="form-control" name="api_id" value="{{ settings.api_id }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="mb-3">
+                                            <label class="form-label">API Hash</label>
+                                            <input type="text" class="form-control" name="api_hash" value="{{ settings.api_hash }}" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-phone"></i> إرسال رمز التحقق
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- التحقق من الرمز -->
+            <div class="row mb-4" id="verifySection" {% if not settings.code_requested %}style="display: none;"{% endif %}>
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-key"></i> التحقق من الرمز</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="verifyForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">رمز التحقق</label>
+                                            <input type="text" class="form-control" name="code" placeholder="12345" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6" id="passwordInputContainer" {% if not settings.needs_password %}style="display: none;"{% endif %}>
+                                        <div class="mb-3">
+                                            <label class="form-label">كلمة المرور (إختيارية)</label>
+                                            <input type="password" class="form-control" name="password" placeholder="إذا كان لديك كلمة مرور ثنائية">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> تأكيد
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- إدارة الكلمات المراقبة -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-search"></i> الكلمات المراقبة</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="keywordsForm">
+                                <div class="mb-3">
+                                    <label class="form-label">الكلمات المراقبة (مفصولة بفاصلة)</label>
+                                    <textarea class="form-control" name="keywords" rows="3" placeholder="حل واجب, assignment, homework">{{ ', '.join(settings.watch_keywords) }}</textarea>
+                                    <small class="form-text text-muted">أدخل الكلمات التي تريد مراقبتها مفصولة بفاصلة</small>
+                                </div>
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-save"></i> حفظ الكلمات
+                                </button>
+                            </form>
+
+                            <div class="mt-3">
+                                <h6>الكلمات الحالية:</h6>
+                                {% for keyword in settings.watch_keywords %}
+                                <span class="keyword-tag">{{ keyword }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- أزرار التحكم -->
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <button id="startBtn" class="btn btn-success me-2" {% if not settings.is_logged %}disabled{% endif %}>
+                        <i class="fas fa-play"></i> بدء المراقبة
+                    </button>
+                    <button id="stopBtn" class="btn btn-danger me-2" {% if not settings.monitoring_enabled or not settings.is_logged %}disabled{% endif %}>
+                        <i class="fas fa-stop"></i> إيقاف المراقبة
+                    </button>
+                    <button id="refreshBtn" class="btn btn-primary me-2">
+                        <i class="fas fa-sync"></i> تحديث الحالة
+                    </button>
+                    <button id="exportBtn" class="btn btn-warning" {% if not settings.is_logged %}disabled{% endif %}>
+                        <i class="fas fa-download"></i> تصدير البيانات
+                    </button>
+                </div>
+            </div>
+
+            <!-- التنبيهات -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-bell"></i> آخر التنبيهات</h5>
+                            <button id="refreshAlertsBtn" class="btn btn-sm btn-primary">
+                                <i class="fas fa-sync"></i> تحديث
+                            </button>
+                        </div>
+                        <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                            <div id="alertsList">
+                                {% if alerts %}
+                                    {% for alert in alerts %}
+                                    <div class="alert-item fade-in">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    <i class="fas fa-search text-primary"></i>
+                                                    الكلمة: <span class="keyword-tag">{{ alert.keyword }}</span>
+                                                </h6>
+                                                <p class="mb-1">
+                                                    <strong>المرسل:</strong> {{ alert.sender_name }} {% if alert.sender_username %}({{ alert.sender_username }}){% endif %}
+                                                </p>
+                                                <p class="mb-1">
+                                                    <strong>المجموعة:</strong> 
+                                                    {% if alert.chat_link_type == 'public' and alert.chat_link %}
+                                                        <a href="{{ alert.chat_link }}" target="_blank">{{ alert.chat_title }}</a>
+                                                    {% else %}
+                                                        {{ alert.chat_title }}
+                                                    {% endif %}
+                                                </p>
+                                                <p class="mb-1">
+                                                    <strong>الرسالة:</strong> {{ alert.message }}
+                                                </p>
+                                            </div>
+                                            <small class="text-muted">{{ alert.timestamp }}</small>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                                        <p>لا توجد تنبيهات حتى الآن</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- رسائل التنبيه -->
+    <div id="messageContainer" style="position: fixed; top: 20px; left: 20px; z-index: 9999;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const userId = "{{ user_id }}";
+
+        // عرض الرسائل
+        function showMessage(message, type = 'info') {
+            const messageContainer = document.getElementById('messageContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            messageDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            messageContainer.appendChild(messageDiv);
+
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
+
+        // تسجيل الدخول
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch(`/anwer/${userId}/login`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'code_required') {
+                    showMessage(result.message, 'success');
+                    document.getElementById('verifySection').style.display = 'block';
+                    document.getElementById('loginSection').style.display = 'none'; // Hide login section
+                    if (result.needs_password) {
+                        document.getElementById('passwordInputContainer').style.display = 'block';
+                    } else {
+                        document.getElementById('passwordInputContainer').style.display = 'none';
+                    }
+                } else if (result.status === 'success') {
+                    showMessage(result.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage(result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showMessage('خطأ في الاتصال: ' + error.message, 'danger');
+            }
+        });
+
+        // التحقق من الرمز
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch(`/anwer/${userId}/verify`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showMessage(result.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage(result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Verify error:', error);
+                showMessage('خطأ في الاتصال: ' + error.message, 'danger');
+            }
+        });
+
+        // تحديث الكلمات
+        document.getElementById('keywordsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch(`/anwer/${userId}/update_keywords`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showMessage(result.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage(result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Update keywords error:', error);
+                showMessage('خطأ في الاتصال: ' + error.message, 'danger');
+            }
+        });
+
+        // بدء المراقبة
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`/anwer/${userId}/start_monitoring`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showMessage(result.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage(result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Start monitoring error:', error);
+                showMessage('خطأ في الاتصال: ' + error.message, 'danger');
+            }
+        });
+
+        // إيقاف المراقبة
+        document.getElementById('stopBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch(`/anwer/${userId}/stop_monitoring`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showMessage(result.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage(result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Stop monitoring error:', error);
+                showMessage('خطأ في الاتصال: ' + error.message, 'danger');
+            }
+        });
+
+        // تحديث الحالة
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            location.reload();
+        });
+
+        // تصدير البيانات
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            window.open(`/anwer/${userId}/export`, '_blank');
+        });
+
+        // تحديث التنبيهات
+        document.getElementById('refreshAlertsBtn').addEventListener('click', async () => {
+            await fetchAlerts();
+        });
+
+        // تحديث قائمة التنبيهات
+        function updateAlertsList(alerts) {
+            const alertsList = document.getElementById('alertsList');
+
+            if (!alerts || alerts.length === 0) {
+                alertsList.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>لا توجد تنبيهات حتى الآن</p>
+                    </div>
+                `;
+                return;
+            }
+
+            alertsList.innerHTML = alerts.map(alert => `
+                <div class="alert-item fade-in">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="fas fa-search text-primary"></i>
+                                الكلمة: <span class="keyword-tag">${escapeHtml(alert.keyword)}</span>
+                            </h6>
+                            <p class="mb-1">
+                                <strong>المرسل:</strong> ${escapeHtml(alert.sender_name)} ${alert.sender_username ? `(${escapeHtml(alert.sender_username)})` : ''}
+                            </p>
+                            <p class="mb-1">
+                                <strong>المجموعة:</strong> 
+                                ${alert.chat_link_type === 'public' && alert.chat_link ? 
+                                    `<a href="${escapeHtml(alert.chat_link)}" target="_blank">${escapeHtml(alert.chat_title)}</a>` : 
+                                    escapeHtml(alert.chat_title)
+                                }
+                            </p>
+                            <p class="mb-1">
+                                <strong>الرسالة:</strong> ${escapeHtml(alert.message)}
+                            </p>
+                        </div>
+                        <small class="text-muted">${escapeHtml(alert.timestamp)}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // دالة جلب التنبيهات
+        async function fetchAlerts() {
+            try {
+                const response = await fetch(`/anwer/${userId}/alerts`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    updateAlertsList(result.alerts);
+                } else {
+                    showMessage('خطأ في جلب التنبيهات', 'danger');
+                }
+            } catch (error) {
+                console.error('Fetch alerts error:', error);
+                showMessage('خطأ في الاتصال: ' + error.message, 'danger');
+            }
+        }
+
+        // تحديث الحالة كل 30 ثانية
+        setInterval(async () => {
+            try {
+                const response = await fetch(`/anwer/${userId}/status`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    // Update status indicators if needed
+                    const connectionStatusIndicator = document.querySelector('.status-indicator.status-connected, .status-indicator.status-disconnected');
+                    if (connectionStatusIndicator) {
+                        if (result.is_logged) {
+                            connectionStatusIndicator.classList.add('status-connected');
+                            connectionStatusIndicator.classList.remove('status-disconnected');
+                            document.querySelector('.status-card:nth-child(1)').classList.add('connected');
+                            document.querySelector('.status-card:nth-child(1)').classList.remove('disconnected');
+                        } else {
+                            connectionStatusIndicator.classList.add('status-disconnected');
+                            connectionStatusIndicator.classList.remove('status-connected');
+                             document.querySelector('.status-card:nth-child(1)').classList.add('disconnected');
+                            document.querySelector('.status-card:nth-child(1)').classList.remove('connected');
+                        }
+                    }
+
+                    const monitoringStatusIndicator = document.querySelector('.status-indicator.status-connected ~ .status-indicator'); // Assuming it's the second one
+                    if (monitoringStatusIndicator) {
+                         if (result.monitoring_enabled) {
+                            monitoringStatusIndicator.classList.add('status-connected');
+                            monitoringStatusIndicator.classList.remove('status-disconnected');
+                             document.querySelector('.status-card:nth-child(2)').classList.add('monitoring');
+                        } else {
+                            monitoringStatusIndicator.classList.add('status-disconnected');
+                            monitoringStatusIndicator.classList.remove('status-connected');
+                            document.querySelector('.status-card:nth-child(2)').classList.remove('monitoring');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }, 30000);
+
+        // تحديث التنبيهات كل دقيقة
+        setInterval(fetchAlerts, 60000);
+
+        // دالة لتنظيف النصوص من HTML
+        function escapeHtml(text) {
+            if (typeof text !== 'string') return text;
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        // Initial load of alerts
+        document.addEventListener('DOMContentLoaded', fetchAlerts);
+    </script>
+</body>
+</html>
